@@ -1,0 +1,35 @@
+name: EGX Daily Scraper
+
+on:
+  schedule:
+    - cron: "30 14 * * 0,1,2,3,4"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
+          playwright install-deps chromium
+      - name: Run scraper
+        run: python scraper.py
+      - name: Commit CSV
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add EGX_History.csv
+          git diff --cached --quiet || git commit -m "EGX data $(date +'%Y-%m-%d')"
+          git push
